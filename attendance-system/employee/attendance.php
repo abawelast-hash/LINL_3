@@ -123,7 +123,7 @@ $badgeClass = $todayStatus === 'checked_in' ? 'in' : ($todayStatus === 'checked_
   $imgDir = __DIR__ . '/../img';
   $bgImages = [];
   if (is_dir($imgDir)) {
-    $allImgs = array_filter(scandir($imgDir), function($f) use ($imgDir) {
+    $allImgs = array_filter(scandir($imgDir), function ($f) use ($imgDir) {
       return is_file($imgDir . '/' . $f) && preg_match('/\.(jpg|jpeg|png|webp)$/i', $f);
     });
     $allImgs = array_values($allImgs);
@@ -134,11 +134,11 @@ $badgeClass = $todayStatus === 'checked_in' ? 'in' : ($todayStatus === 'checked_
   }
   ?>
   <?php if (!empty($bgImages)): ?>
-  <div class="bg-decor">
-    <?php foreach ($bgImages as $i => $img): ?>
-      <img src="<?= SITE_URL ?>/img/<?= rawurlencode($img) ?>" alt="" class="bg-i<?= $i + 1 ?>" loading="lazy">
-    <?php endforeach; ?>
-  </div>
+    <div class="bg-decor">
+      <?php foreach ($bgImages as $i => $img): ?>
+        <img src="<?= SITE_URL ?>/img/<?= rawurlencode($img) ?>" alt="" class="bg-i<?= $i + 1 ?>" loading="lazy">
+      <?php endforeach; ?>
+    </div>
   <?php endif; ?>
 
   <?php if ($error): ?>

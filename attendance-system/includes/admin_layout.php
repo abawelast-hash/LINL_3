@@ -40,11 +40,11 @@
     }
     ?>
     <?php if (!empty($bgImages)): ?>
-    <div class="bg-decor">
-        <?php foreach ($bgImages as $i => $img): ?>
-            <img src="<?= SITE_URL ?>/img/<?= rawurlencode($img) ?>" alt="" class="bg-i<?= $i + 1 ?>" loading="lazy">
-        <?php endforeach; ?>
-    </div>
+        <div class="bg-decor">
+            <?php foreach ($bgImages as $i => $img): ?>
+                <img src="<?= SITE_URL ?>/img/<?= rawurlencode($img) ?>" alt="" class="bg-i<?= $i + 1 ?>" loading="lazy">
+            <?php endforeach; ?>
+        </div>
     <?php endif; ?>
 
     <!-- Sidebar Overlay (mobile) -->
