@@ -263,15 +263,14 @@ require_once __DIR__ . '/../includes/admin_layout.php';
         <table class="emp-table">
             <thead>
                 <tr>
-                    <th>#</th>
+                    <th style="width:36px">#</th>
                     <th>الاسم</th>
                     <th>الوظيفة</th>
                     <th>الفرع</th>
                     <th>الحالة</th>
                     <th>الجهاز</th>
                     <th>حالة الرابط</th>
-                    <th>رابط الحضور</th>
-                    <th>الإجراءات</th>
+                    <th style="width:60px">إجراءات</th>
                 </tr>
             </thead>
             <tbody>
@@ -288,16 +287,12 @@ require_once __DIR__ . '/../includes/admin_layout.php';
                             if (($_e['branch_name'] ?? 'بدون فرع') === $curBranch) $brCount++;
                         }
                 ?>
-                        <tr>
-                            <td colspan="9" style="background:<?= $rowColor ?>12;border-right:4px solid <?= $rowColor ?>;padding:8px 14px;font-weight:700;font-size:.88rem;color:<?= $rowColor ?>;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
-                                <span>
-                                    <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:<?= $rowColor ?>;margin-left:6px;vertical-align:middle"></span>
-                                    <?= htmlspecialchars($curBranch) ?>
-                                    <span style="font-size:.72rem;font-weight:400;color:var(--text3);margin-right:6px">(<?= $brCount ?> موظف)</span>
-                                </span>
-                                <button class="btn btn-green btn-sm" onclick="copyBranchLinks('<?= htmlspecialchars(addslashes($curBranch), ENT_QUOTES) ?>')" style="font-size:.72rem;padding:4px 10px;white-space:nowrap">
-                                    <?= svgIcon('copy', 12) ?> نسخ روابط الفرع
-                                </button>
+                        <tr class="branch-separator">
+                            <td colspan="8" style="background:<?= $rowColor ?>12;border-right:4px solid <?= $rowColor ?>;padding:6px 14px;font-weight:700;font-size:.85rem;color:<?= $rowColor ?>">
+                                <span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:<?= $rowColor ?>;margin-left:5px;vertical-align:middle"></span>
+                                <?= htmlspecialchars($curBranch) ?>
+                                <span style="font-size:.7rem;font-weight:400;color:var(--text3);margin-right:4px">(<?= $brCount ?>)</span>
+                                <button class="btn-copy-branch" onclick="copyBranchLinks('<?= htmlspecialchars(addslashes($curBranch), ENT_QUOTES) ?>')" title="نسخ روابط الفرع"><?= svgIcon('copy', 11) ?></button>
                             </td>
                         </tr>
                     <?php endif;
@@ -333,66 +328,68 @@ require_once __DIR__ . '/../includes/admin_layout.php';
                         </td>
                         <td>
                             <?php $link = SITE_URL . '/employee/attendance.php?token=' . $emp['unique_token']; ?>
-                            <div style="display:flex;gap:6px;flex-wrap:wrap">
-                                <a href="<?= $link ?>" target="_blank" class="btn btn-secondary btn-sm">الرابط</a>
-                                <?php if ($emp['phone']): ?>
-                                    <a href="<?= generateWhatsAppLink($emp['phone'], $emp['unique_token']) ?>"
-                                        target="_blank" class="btn btn-wa btn-sm">واتساب</a>
-                                <?php else: ?>
-                                    <button class="btn btn-wa btn-sm"
-                                        onclick="copyLink('<?= $link ?>')" title="نسخ الرابط"><?= svgIcon('copy', 14) ?> نسخ</button>
-                                <?php endif; ?>
-                            </div>
-                        </td>
-                        <td>
-                            <div class="actions-wrap" style="display:flex;gap:6px;flex-wrap:wrap">
-                                <button class="btn btn-secondary btn-sm" onclick='openEditModal(<?= json_encode($emp, JSON_UNESCAPED_UNICODE) ?>)' title="تعديل"><?= svgIcon('settings', 14) ?></button>
-                                <form method="POST" style="display:inline" onsubmit="return confirm('إعادة توليد رابط؟ الرابط القديم سيتوقف.')">
-                                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                    <input type="hidden" name="action" value="regen_token">
-                                    <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
-                                    <button type="submit" class="btn btn-secondary btn-sm" title="إعادة توليد الرابط"><?= svgIcon('checkout', 14) ?></button>
-                                </form>
-                                <form method="POST" style="display:inline">
-                                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                    <input type="hidden" name="action" value="toggle">
-                                    <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
-                                    <button type="submit" class="btn btn-secondary btn-sm" title="تفعيل/تعطيل">
+                            <div class="dropdown-wrap">
+                                <button class="btn btn-secondary btn-sm" onclick="toggleEmpMenu(this)" type="button">⚙️ ▾</button>
+                                <div class="dropdown-menu emp-actions-menu">
+                                    <!-- روابط -->
+                                    <a href="<?= $link ?>" target="_blank" class="dropdown-item">🔗 فتح الرابط</a>
+                                    <button type="button" class="dropdown-item" onclick="copyLink('<?= $link ?>');this.closest('.dropdown-menu').classList.remove('show')">📋 نسخ الرابط</button>
+                                    <?php if ($emp['phone']): ?>
+                                        <a href="<?= generateWhatsAppLink($emp['phone'], $emp['unique_token']) ?>" target="_blank" class="dropdown-item" style="color:#25D366">💬 إرسال واتساب</a>
+                                    <?php endif; ?>
+                                    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                                    <!-- تعديل -->
+                                    <button type="button" class="dropdown-item" onclick='this.closest(".dropdown-menu").classList.remove("show");openEditModal(<?= json_encode($emp, JSON_UNESCAPED_UNICODE) ?>)'><?= svgIcon('settings', 14) ?> تعديل البيانات</button>
+                                    <!-- توليد رابط -->
+                                    <form method="POST" onsubmit="return confirm('إعادة توليد رابط؟ الرابط القديم سيتوقف.')">
+                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="action" value="regen_token">
+                                        <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
+                                        <button type="submit" class="dropdown-item"><?= svgIcon('checkout', 14) ?> تجديد الرابط</button>
+                                    </form>
+                                    <!-- تفعيل/تعطيل -->
+                                    <form method="POST">
+                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                        <input type="hidden" name="action" value="toggle">
+                                        <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
                                         <?php if ($emp['is_active']): ?>
-                                            <span style="color:var(--red)"><?= svgIcon('absent', 14) ?></span>
+                                            <button type="submit" class="dropdown-item" style="color:var(--red)"><?= svgIcon('absent', 14) ?> تعطيل</button>
                                         <?php else: ?>
-                                            <span style="color:var(--green)"><?= svgIcon('checkin', 14) ?></span>
+                                            <button type="submit" class="dropdown-item" style="color:var(--green)"><?= svgIcon('checkin', 14) ?> تفعيل</button>
                                         <?php endif; ?>
-                                    </button>
-                                </form>
-                                <?php if (!empty($emp['device_fingerprint'])): ?>
-                                    <form method="POST" style="display:inline" onsubmit="return confirm('إعادة تعيين الجهاز؟ سيصبح الرابط حراً بدون ربط.')">
-                                        <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                        <input type="hidden" name="action" value="reset_device">
-                                        <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
-                                        <button type="submit" class="btn btn-secondary btn-sm" title="فك ربط الجهاز"><?= svgIcon('lock', 14) ?></button>
                                     </form>
-                                <?php elseif (empty($emp['device_bind_mode'])): ?>
-                                    <form method="POST" style="display:inline" onsubmit="return confirm('تفعيل ربط الجهاز؟ سيُربط تلقائياً عند الدخول التالي للموظف.')">
+                                    <!-- جهاز -->
+                                    <?php if (!empty($emp['device_fingerprint'])): ?>
+                                        <form method="POST" onsubmit="return confirm('فك ربط الجهاز؟')">
+                                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                            <input type="hidden" name="action" value="reset_device">
+                                            <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
+                                            <button type="submit" class="dropdown-item"><?= svgIcon('lock', 14) ?> فك ربط الجهاز</button>
+                                        </form>
+                                    <?php elseif (empty($emp['device_bind_mode'])): ?>
+                                        <form method="POST" onsubmit="return confirm('تفعيل ربط الجهاز؟')">
+                                            <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
+                                            <input type="hidden" name="action" value="enable_bind">
+                                            <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
+                                            <button type="submit" class="dropdown-item" style="color:var(--green)"><?= svgIcon('key', 14) ?> ربط الجهاز</button>
+                                        </form>
+                                    <?php endif; ?>
+                                    <div style="border-top:1px solid var(--border);margin:4px 0"></div>
+                                    <!-- أرشفة -->
+                                    <form method="POST" onsubmit="return confirm('أرشفة الموظف؟')">
                                         <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                        <input type="hidden" name="action" value="enable_bind">
+                                        <input type="hidden" name="action" value="delete">
                                         <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
-                                        <button type="submit" class="btn btn-green btn-sm" title="ربط الجهاز عند الدخول التالي"><?= svgIcon('key', 14) ?></button>
+                                        <button type="submit" class="dropdown-item" style="color:var(--red)"><?= svgIcon('absent', 14) ?> أرشفة الموظف</button>
                                     </form>
-                                <?php endif; ?>
-                                <form method="POST" style="display:inline" onsubmit="return confirm('أرشفة الموظف؟ يمكن استعادته لاحقاً.')">
-                                    <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
-                                    <input type="hidden" name="action" value="delete">
-                                    <input type="hidden" name="emp_id" value="<?= $emp['id'] ?>">
-                                    <button type="submit" class="btn btn-danger btn-sm" title="أرشفة"><?= svgIcon('absent', 14) ?></button>
-                                </form>
+                                </div>
                             </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
                 <?php if (empty($employees)): ?>
                     <tr>
-                        <td colspan="9" style="text-align:center;padding:30px;color:var(--text3)">لا توجد نتائج</td>
+                        <td colspan="8" style="text-align:center;padding:30px;color:var(--text3)">لا توجد نتائج</td>
                     </tr>
                 <?php endif; ?>
             </tbody>
@@ -690,6 +687,14 @@ require_once __DIR__ . '/../includes/admin_layout.php';
             document.querySelectorAll('.dropdown-menu.show').forEach(m => m.classList.remove('show'));
         }
     });
+
+    // فتح/إغلاق قائمة الإجراءات مع إغلاق أي قائمة أخرى مفتوحة
+    function toggleEmpMenu(btn) {
+        const menu = btn.nextElementSibling;
+        const wasOpen = menu.classList.contains('show');
+        document.querySelectorAll('.emp-actions-menu.show').forEach(m => m.classList.remove('show'));
+        if (!wasOpen) menu.classList.add('show');
+    }
 
     function tick() {
         const el = document.getElementById('topbarClock');
