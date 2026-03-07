@@ -703,20 +703,21 @@ require_once __DIR__ . '/../includes/admin_layout.php';
     function openAddModal() {
         openModal('addModal');
         setTimeout(() => {
-            if (!addMap) {
-                addMap = L.map('branchMapAdd').setView([24.7136, 46.6753], 12);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(addMap);
-                addMap.on('click', function(e) {
-                    if (addMarker) addMap.removeLayer(addMarker);
-                    addMarker = L.marker(e.latlng).addTo(addMap);
-                    document.getElementById('addLat').value = e.latlng.lat.toFixed(8);
-                    document.getElementById('addLon').value = e.latlng.lng.toFixed(8);
-                });
-            }
+            // إعادة إنشاء الخريطة في كل مرة لضمان العرض الصحيح
+            if (addMap) { addMap.remove(); addMap = null; addMarker = null; }
+            addMap = L.map('branchMapAdd').setView([24.7136, 46.6753], 13);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(addMap);
+            addMap.on('click', function(e) {
+                if (addMarker) addMap.removeLayer(addMarker);
+                addMarker = L.marker(e.latlng).addTo(addMap);
+                document.getElementById('addLat').value = e.latlng.lat.toFixed(8);
+                document.getElementById('addLon').value = e.latlng.lng.toFixed(8);
+            });
             addMap.invalidateSize();
-        }, 300);
+        }, 350);
     }
 
     // خريطة التعديل
@@ -741,26 +742,24 @@ require_once __DIR__ . '/../includes/admin_layout.php';
         document.getElementById('eActive').value = b.is_active;
         openModal('editModal');
         setTimeout(() => {
-            const lat = parseFloat(b.latitude);
-            const lon = parseFloat(b.longitude);
-            if (!editMap) {
-                editMap = L.map('branchMapEdit').setView([lat, lon], 16);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '© OpenStreetMap'
-                }).addTo(editMap);
-                editMap.on('click', function(e) {
-                    if (editMarker) editMap.removeLayer(editMarker);
-                    editMarker = L.marker(e.latlng).addTo(editMap);
-                    document.getElementById('eLat').value = e.latlng.lat.toFixed(8);
-                    document.getElementById('eLon').value = e.latlng.lng.toFixed(8);
-                });
-            } else {
-                editMap.setView([lat, lon], 16);
-            }
-            if (editMarker) editMap.removeLayer(editMarker);
+            const lat = parseFloat(b.latitude) || 24.7136;
+            const lon = parseFloat(b.longitude) || 46.6753;
+            // إعادة إنشاء الخريطة في كل مرة لضمان العرض الصحيح
+            if (editMap) { editMap.remove(); editMap = null; editMarker = null; }
+            editMap = L.map('branchMapEdit').setView([lat, lon], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(editMap);
+            editMap.on('click', function(e) {
+                if (editMarker) editMap.removeLayer(editMarker);
+                editMarker = L.marker(e.latlng).addTo(editMap);
+                document.getElementById('eLat').value = e.latlng.lat.toFixed(8);
+                document.getElementById('eLon').value = e.latlng.lng.toFixed(8);
+            });
             editMarker = L.marker([lat, lon]).addTo(editMap);
             editMap.invalidateSize();
-        }, 300);
+        }, 350);
     }
 
     // Auto-calculate optimal settings based on work start/end

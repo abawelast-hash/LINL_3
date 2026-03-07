@@ -865,7 +865,7 @@ function initRadarMap() {
     zoomControl: false, attributionControl: false,
     dragging: false, scrollWheelZoom: false, doubleClickZoom: false, touchZoom: false, keyboard: false
   }).setView([centerLat, centerLon], 17);
-  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {maxZoom: 20, maxNativeZoom: 19}).addTo(radarMap);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {maxZoom: 19, maxNativeZoom: 19}).addTo(radarMap);
 
   // Branch marker (building icon) — counter-rotate so it stays upright
   var brIcon = L.divIcon({
