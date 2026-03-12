@@ -476,7 +476,7 @@ L.Icon.Default.mergeOptions({
                 </div>
             </div>
             <div class="bc-actions">
-                <button class="btn btn-secondary btn-sm" onclick='openEditModal(<?= json_encode($b, JSON_UNESCAPED_UNICODE) ?>)'>تعديل</button>
+                <a class="btn btn-secondary btn-sm" href="branch-edit.php?id=<?= (int)$b['id'] ?>">تعديل</a>
                 <form method="POST" style="display:inline">
                     <input type="hidden" name="csrf_token" value="<?= $csrf ?>">
                     <input type="hidden" name="action" value="toggle">
