@@ -31,6 +31,7 @@ $recentStmt = db()->prepare("
     FROM attendances a
     JOIN employees e ON a.employee_id = e.id
     LEFT JOIN branches b ON e.branch_id = b.id
+    WHERE e.is_active = 1 AND e.deleted_at IS NULL
     ORDER BY a.timestamp DESC
     LIMIT 15
 ");
@@ -54,7 +55,7 @@ foreach ($recentRecords as $rec) {
 $absentStmt = db()->prepare("
     SELECT e.name, e.job_title, b.name AS branch_name FROM employees e
     LEFT JOIN branches b ON e.branch_id = b.id
-    WHERE e.is_active = 1
+    WHERE e.is_active = 1 AND e.deleted_at IS NULL
       AND e.id NOT IN (
           SELECT DISTINCT employee_id FROM attendances
           WHERE attendance_date = ?

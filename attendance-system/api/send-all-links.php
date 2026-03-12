@@ -15,7 +15,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 // التحقق من CSRF
-if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== ($_SESSION['csrf_token'] ?? '')) {
+if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
     jsonResponse(['success' => false, 'message' => 'رمز الأمان غير صحيح'], 403);
 }
 

@@ -66,7 +66,7 @@ $recStmt->execute($params);
 $records = $recStmt->fetchAll();
 
 // قائمة الموظفين للفلتر
-$empList = db()->query("SELECT id, name FROM employees WHERE is_active=1 ORDER BY name")->fetchAll();
+$empList = db()->query("SELECT id, name FROM employees WHERE is_active=1 AND deleted_at IS NULL ORDER BY name")->fetchAll();
 
 // قائمة الفروع للفلتر
 $branchList = db()->query("SELECT id, name FROM branches WHERE is_active=1 ORDER BY name")->fetchAll();

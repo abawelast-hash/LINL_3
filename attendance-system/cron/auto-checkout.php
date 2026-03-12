@@ -16,7 +16,7 @@ require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 
 // لو غير CLI، منع التشغيل
-if (php_sapi_name() !== 'cli' && !isset($_GET['secret']) || (isset($_GET['secret']) && $_GET['secret'] !== 'auto_checkout_2026')) {
+if (php_sapi_name() !== 'cli' && (!isset($_GET['secret']) || $_GET['secret'] !== 'auto_checkout_2026')) {
     http_response_code(403);
     exit('Access denied');
 }

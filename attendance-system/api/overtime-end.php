@@ -67,7 +67,7 @@ if (!$overtimeSession) {
 $startTime = new DateTime($overtimeSession['timestamp']);
 $endTime = new DateTime();
 $duration = $endTime->diff($startTime);
-$durationMinutes = ($duration->h * 60) + $duration->i;
+$durationMinutes = ($duration->days * 24 * 60) + ($duration->h * 60) + $duration->i;
 
 // التحقق من الحد الأدنى للمدة (30 دقيقة افتراضياً)
 $schedule = getBranchSchedule($employee['branch_id'] ?? null);
@@ -92,6 +92,6 @@ jsonResponse([
     'message'       => 'تم إنهاء الدوام الإضافي بنجاح',
     'employee_name' => $employee['name'],
     'duration_minutes' => $durationMinutes,
-    'duration_formatted' => sprintf('%dh %dm', $duration->h, $duration->i),
+    'duration_formatted' => sprintf('%dh %dm', floor($durationMinutes / 60), $durationMinutes % 60),
     'timestamp'     => date('Y-m-d H:i:s')
 ]);

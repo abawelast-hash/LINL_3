@@ -13,7 +13,7 @@ $empId = (int)($_GET['emp_id'] ?? 0);
 
 if ($empId > 0) {
     // موظف واحد
-    $emp = db()->prepare("SELECT * FROM employees WHERE id=? AND is_active=1");
+    $emp = db()->prepare("SELECT * FROM employees WHERE id=? AND is_active=1 AND deleted_at IS NULL");
     $emp->execute([$empId]);
     $employee = $emp->fetch();
     if (!$employee) {
@@ -24,7 +24,7 @@ if ($empId > 0) {
     jsonResponse(['success' => true, 'link' => $link, 'whatsapp' => $wa, 'employee' => $employee['name']]);
 } else {
     // جميع الموظفين
-    $all = db()->query("SELECT id, name, phone, unique_token FROM employees WHERE is_active=1 ORDER BY name")->fetchAll();
+    $all = db()->query("SELECT id, name, phone, unique_token FROM employees WHERE is_active=1 AND deleted_at IS NULL ORDER BY name")->fetchAll();
     $result = [];
     foreach ($all as $e) {
         $link = SITE_URL . '/employee/attendance.php?token=' . $e['unique_token'];

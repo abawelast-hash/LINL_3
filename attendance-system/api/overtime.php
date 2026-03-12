@@ -5,8 +5,12 @@
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/rate_limiter.php';
 
 header('Content-Type: application/json; charset=utf-8');
+
+// Rate Limiting
+if (isRateLimited(20, 60, 'overtime')) { rateLimitResponse(); }
 header('Access-Control-Allow-Origin: ' . SITE_URL);
 header('Access-Control-Allow-Methods: POST');
 
@@ -41,7 +45,7 @@ if (!$employee) {
 }
 
 // التحقق من النطاق الجغرافي
-$geoCheck = isWithinGeofence($lat, $lon);
+$geoCheck = isWithinGeofence($lat, $lon, $employee['branch_id'] ?? null);
 if (!$geoCheck['allowed']) {
     jsonResponse([
         'success'  => false,
@@ -64,7 +68,7 @@ if (!$stmt->fetch()) {
 // التحقق من عدم وجود دوام إضافي سابق اليوم
 $stmt = db()->prepare("
     SELECT id FROM attendances 
-    WHERE employee_id = ? AND type = 'overtime' AND attendance_date = CURDATE()
+    WHERE employee_id = ? AND type = 'overtime-start' AND attendance_date = CURDATE()
     LIMIT 1
 ");
 $stmt->execute([$employee['id']]);
@@ -77,8 +81,8 @@ $ip        = getClientIP();
 $userAgent = $_SERVER['HTTP_USER_AGENT'] ?? '';
 
 $stmt = db()->prepare("
-    INSERT INTO attendances (employee_id, type, timestamp, latitude, longitude, location_accuracy, ip_address, user_agent)
-    VALUES (?, 'overtime', NOW(), ?, ?, ?, ?, ?)
+    INSERT INTO attendances (employee_id, type, timestamp, attendance_date, latitude, longitude, location_accuracy, ip_address, user_agent)
+    VALUES (?, 'overtime-start', NOW(), CURDATE(), ?, ?, ?, ?, ?)
 ");
 $stmt->execute([$employee['id'], $lat, $lon, $accuracy, $ip, $userAgent]);
 

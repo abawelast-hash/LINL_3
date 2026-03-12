@@ -183,12 +183,6 @@ L.Icon.Default.mergeOptions({
         overflow: hidden;
         position: relative;
         z-index: 0;
-        contain: layout paint;
-        isolation: isolate;
-    }
-
-    #branchMapEditPage .leaflet-container {
-        border-radius: 8px;
     }
 
     .branch-edit-foot {
@@ -337,8 +331,8 @@ L.Icon.Default.mergeOptions({
         const lat = parseFloat(document.getElementById('eLat').value) || 24.7136;
         const lon = parseFloat(document.getElementById('eLon').value) || 46.6753;
         editMap = L.map('branchMapEditPage').setView([lat, lon], 16);
-        L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
-            attribution: '© Esri & contributors',
+        L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
             maxZoom: 19
         }).addTo(editMap);
 
@@ -439,7 +433,7 @@ L.Icon.Default.mergeOptions({
 
     document.getElementById('sidebarOverlay')?.addEventListener('click', toggleSidebar);
 
-    initMap();
+    setTimeout(initMap, 200);
     tick();
     setInterval(tick, 1000);
 </script>

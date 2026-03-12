@@ -66,7 +66,8 @@ if (!empty($_FILES['images']['name'][0])) {
     $mime  = $finfo->file($_FILES['images']['tmp_name'][$i]);
     if (!in_array($mime, $allowedMime)) continue;
 
-    $ext      = pathinfo($_FILES['images']['name'][$i], PATHINFO_EXTENSION) ?: 'jpg';
+    $mimeToExt = ['image/jpeg'=>'jpg','image/png'=>'png','image/gif'=>'gif','image/webp'=>'webp'];
+    $ext      = $mimeToExt[$mime] ?? 'jpg';
     $filename = 'img_' . uniqid() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
     $destPath = $imageDir . '/' . $filename;
 
@@ -82,15 +83,19 @@ if (!empty($_FILES['voice']) && $_FILES['voice']['error'] === UPLOAD_ERR_OK) {
   if (!is_dir($voiceDir)) mkdir($voiceDir, 0755, true);
 
   $maxVoiceSize = 15 * 1024 * 1024; // 15MB
-  $allowedVoiceMime = ['audio/webm', 'audio/ogg', 'audio/wav', 'audio/mp4', 'audio/mpeg', 'audio/mp3', 'application/octet-stream'];
+  $allowedVoiceMime = ['audio/webm', 'audio/ogg', 'audio/wav', 'audio/mp4', 'audio/mpeg', 'audio/mp3'];
 
   if ($_FILES['voice']['size'] <= $maxVoiceSize) {
-    $ext = 'webm';
-    $voiceFilename = 'voice_' . uniqid() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-    $voiceDest = $voiceDir . '/' . $voiceFilename;
+    $finfo = new finfo(FILEINFO_MIME_TYPE);
+    $voiceMime = $finfo->file($_FILES['voice']['tmp_name']);
+    if (in_array($voiceMime, $allowedVoiceMime)) {
+      $ext = 'webm';
+      $voiceFilename = 'voice_' . uniqid() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+      $voiceDest = $voiceDir . '/' . $voiceFilename;
 
-    if (move_uploaded_file($_FILES['voice']['tmp_name'], $voiceDest)) {
-      $voicePath = 'uploads/reports/voices/' . $voiceFilename;
+      if (move_uploaded_file($_FILES['voice']['tmp_name'], $voiceDest)) {
+        $voicePath = 'uploads/reports/voices/' . $voiceFilename;
+      }
     }
   }
 }
