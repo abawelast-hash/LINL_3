@@ -497,16 +497,19 @@ require_once __DIR__ . '/../includes/admin_layout.php';
                         <input class="form-control" type="number" name="geofence_radius" value="25" min="1" required>
                     </div>
                 </div>
-                <div class="form-section">الموقع الجغرافي — اضغط على الخريطة لتحديد الموقع</div>
+                <div class="form-section">
+                    الموقع الجغرافي — اضغط على الخريطة أو أدخل الإحداثيات يدوياً
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="useMyLocation('add')" style="margin-right:auto;font-size:.72rem;padding:3px 10px">📍 موقعي الحالي</button>
+                </div>
                 <div id="branchMapAdd"></div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">خط العرض *</label>
-                        <input class="form-control" type="number" step="any" name="latitude" id="addLat" required style="direction:ltr">
+                        <input class="form-control" type="number" step="any" name="latitude" id="addLat" required style="direction:ltr" placeholder="مثال: 24.7136" oninput="syncMapFromInputs('add')">
                     </div>
                     <div class="form-group">
                         <label class="form-label">خط الطول *</label>
-                        <input class="form-control" type="number" step="any" name="longitude" id="addLon" required style="direction:ltr">
+                        <input class="form-control" type="number" step="any" name="longitude" id="addLon" required style="direction:ltr" placeholder="مثال: 46.6753" oninput="syncMapFromInputs('add')">
                     </div>
                 </div>
 
@@ -598,16 +601,19 @@ require_once __DIR__ . '/../includes/admin_layout.php';
                         <input class="form-control" type="number" name="geofence_radius" id="eRadius" min="1">
                     </div>
                 </div>
-                <div class="form-section">الموقع الجغرافي</div>
+                <div class="form-section">
+                    الموقع الجغرافي
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="useMyLocation('edit')" style="margin-right:auto;font-size:.72rem;padding:3px 10px">📍 موقعي الحالي</button>
+                </div>
                 <div id="branchMapEdit"></div>
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">خط العرض</label>
-                        <input class="form-control" type="number" step="any" name="latitude" id="eLat" style="direction:ltr">
+                        <input class="form-control" type="number" step="any" name="latitude" id="eLat" style="direction:ltr" oninput="syncMapFromInputs('edit')">
                     </div>
                     <div class="form-group">
                         <label class="form-label">خط الطول</label>
-                        <input class="form-control" type="number" step="any" name="longitude" id="eLon" style="direction:ltr">
+                        <input class="form-control" type="number" step="any" name="longitude" id="eLon" style="direction:ltr" oninput="syncMapFromInputs('edit')">
                     </div>
                 </div>
 
@@ -703,7 +709,6 @@ require_once __DIR__ . '/../includes/admin_layout.php';
     function openAddModal() {
         openModal('addModal');
         setTimeout(() => {
-            // إعادة إنشاء الخريطة في كل مرة لضمان العرض الصحيح
             if (addMap) { addMap.remove(); addMap = null; addMarker = null; }
             addMap = L.map('branchMapAdd').setView([24.7136, 46.6753], 13);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -711,12 +716,13 @@ require_once __DIR__ . '/../includes/admin_layout.php';
                 maxZoom: 19
             }).addTo(addMap);
             addMap.on('click', function(e) {
-                if (addMarker) addMap.removeLayer(addMarker);
-                addMarker = L.marker(e.latlng).addTo(addMap);
-                document.getElementById('addLat').value = e.latlng.lat.toFixed(8);
-                document.getElementById('addLon').value = e.latlng.lng.toFixed(8);
+                placeMarker('add', e.latlng.lat, e.latlng.lng);
             });
             addMap.invalidateSize();
+            // إذا كانت هناك قيم موجودة في الحقول عرضها على الخريطة
+            const lat = parseFloat(document.getElementById('addLat').value);
+            const lon = parseFloat(document.getElementById('addLon').value);
+            if (lat && lon) placeMarker('add', lat, lon, false);
         }, 350);
     }
 
@@ -744,7 +750,6 @@ require_once __DIR__ . '/../includes/admin_layout.php';
         setTimeout(() => {
             const lat = parseFloat(b.latitude) || 24.7136;
             const lon = parseFloat(b.longitude) || 46.6753;
-            // إعادة إنشاء الخريطة في كل مرة لضمان العرض الصحيح
             if (editMap) { editMap.remove(); editMap = null; editMarker = null; }
             editMap = L.map('branchMapEdit').setView([lat, lon], 16);
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -752,14 +757,59 @@ require_once __DIR__ . '/../includes/admin_layout.php';
                 maxZoom: 19
             }).addTo(editMap);
             editMap.on('click', function(e) {
-                if (editMarker) editMap.removeLayer(editMarker);
-                editMarker = L.marker(e.latlng).addTo(editMap);
-                document.getElementById('eLat').value = e.latlng.lat.toFixed(8);
-                document.getElementById('eLon').value = e.latlng.lng.toFixed(8);
+                placeMarker('edit', e.latlng.lat, e.latlng.lng);
             });
             editMarker = L.marker([lat, lon]).addTo(editMap);
             editMap.invalidateSize();
         }, 350);
+    }
+
+    // وضع أو تحريك الماركر وتحديث حقول الإدخال
+    function placeMarker(mode, lat, lon, updateInputs = true) {
+        const map = mode === 'add' ? addMap : editMap;
+        if (!map) return;
+        if (mode === 'add') {
+            if (addMarker) addMap.removeLayer(addMarker);
+            addMarker = L.marker([lat, lon]).addTo(addMap);
+        } else {
+            if (editMarker) editMap.removeLayer(editMarker);
+            editMarker = L.marker([lat, lon]).addTo(editMap);
+        }
+        map.setView([lat, lon], map.getZoom() < 14 ? 16 : map.getZoom());
+        if (updateInputs) {
+            const latId = mode === 'add' ? 'addLat' : 'eLat';
+            const lonId = mode === 'add' ? 'addLon' : 'eLon';
+            document.getElementById(latId).value = lat.toFixed(8);
+            document.getElementById(lonId).value = lon.toFixed(8);
+        }
+    }
+
+    // مزامنة الخريطة عند تعديل حقول الإدخال يدوياً
+    function syncMapFromInputs(mode) {
+        const latId = mode === 'add' ? 'addLat' : 'eLat';
+        const lonId = mode === 'add' ? 'addLon' : 'eLon';
+        const lat = parseFloat(document.getElementById(latId).value);
+        const lon = parseFloat(document.getElementById(lonId).value);
+        if (!isNaN(lat) && !isNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180) {
+            placeMarker(mode, lat, lon, false);
+        }
+    }
+
+    // استخدام الموقع الحالي (GPS)
+    function useMyLocation(mode) {
+        if (!navigator.geolocation) {
+            alert('المتصفح لا يدعم تحديد الموقع');
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            function(pos) {
+                placeMarker(mode, pos.coords.latitude, pos.coords.longitude);
+            },
+            function(err) {
+                alert('تعذّر تحديد الموقع: ' + err.message);
+            },
+            { enableHighAccuracy: true, timeout: 10000 }
+        );
     }
 
     // Auto-calculate optimal settings based on work start/end
