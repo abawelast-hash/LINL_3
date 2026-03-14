@@ -69,3 +69,11 @@ if (session_status() === PHP_SESSION_NONE) {
 error_reporting(E_ERROR | E_WARNING | E_PARSE);
 ini_set('display_errors', 0);
 ini_set('log_errors', 1);
+
+// ================== Security Headers ==================
+if (!headers_sent()) {
+    header('X-Content-Type-Options: nosniff');
+    header('X-Frame-Options: SAMEORIGIN');
+    header('X-XSS-Protection: 1; mode=block');
+    header('Referrer-Policy: strict-origin-when-cross-origin');
+}

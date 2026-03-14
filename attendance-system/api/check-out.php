@@ -12,7 +12,14 @@ header('Content-Type: application/json; charset=utf-8');
 // Rate Limiting: 30 طلب/دقيقة لكل IP
 if (isRateLimited(30, 60, 'checkout')) { rateLimitResponse(); }
 header('Access-Control-Allow-Origin: ' . SITE_URL);
-header('Access-Control-Allow-Methods: POST');
+header('Access-Control-Allow-Methods: POST, OPTIONS');
+header('Access-Control-Allow-Headers: Content-Type');
+
+// Handle CORS preflight
+if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
+    http_response_code(204);
+    exit;
+}
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     jsonResponse(['success' => false, 'message' => 'طريقة طلب غير مسموحة'], 405);

@@ -12,10 +12,15 @@ requireAdminLogin();
 // =================== حذف سجل ===================
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_id'])) {
     header('Content-Type: application/json');
+    if (!verifyCsrfToken($_POST['csrf_token'] ?? '')) {
+        echo json_encode(['success' => false, 'message' => 'طلب غير صالح']);
+        exit;
+    }
     $delId = (int)$_POST['delete_id'];
     if ($delId > 0) {
         $st = db()->prepare("DELETE FROM attendances WHERE id = ?");
         $st->execute([$delId]);
+        auditLog('delete_attendance', "حذف سجل حضور ID={$delId}", $delId);
         echo json_encode(['success' => true, 'deleted' => $st->rowCount()]);
     } else {
         echo json_encode(['success' => false, 'message' => 'معرف غير صالح']);
@@ -29,6 +34,10 @@ $activePage = 'attendance';
 // =================== فلاتر ===================
 $dateFrom = $_GET['date_from'] ?? date('Y-m-d');
 $dateTo   = $_GET['date_to']   ?? date('Y-m-d');
+// التحقق من صحة التواريخ وتبديلها إن كان البداية بعد النهاية
+if ($dateFrom > $dateTo) {
+    $tmp = $dateFrom; $dateFrom = $dateTo; $dateTo = $tmp;
+}
 $empId    = (int)($_GET['emp_id'] ?? 0);
 $type     = $_GET['type'] ?? '';
 $filterBranch = (int)($_GET['branch'] ?? 0);
@@ -60,9 +69,9 @@ $recStmt = db()->prepare("
     LEFT JOIN branches b ON e.branch_id = b.id
     WHERE $whereStr
     ORDER BY a.timestamp DESC
-    LIMIT $perPage OFFSET $offset
+    LIMIT ? OFFSET ?
 ");
-$recStmt->execute($params);
+$recStmt->execute(array_merge($params, [$perPage, $offset]));
 $records = $recStmt->fetchAll();
 
 // قائمة الموظفين للفلتر
@@ -85,6 +94,19 @@ $periodStats = $statsStmt->fetch();
 
 // تصدير CSV
 if (isset($_GET['export']) && $_GET['export'] === 'csv') {
+    // التحقق من صحة نطاق التواريخ
+    $fromDate = DateTime::createFromFormat('Y-m-d', $dateFrom);
+    $toDate = DateTime::createFromFormat('Y-m-d', $dateTo);
+    if (!$fromDate || !$toDate) {
+        die('تواريخ غير صالحة');
+    }
+    if ($fromDate > $toDate) {
+        $tmp = $dateFrom; $dateFrom = $dateTo; $dateTo = $tmp;
+    }
+    $daysDiff = $toDate->diff($fromDate)->days;
+    if ($daysDiff > 365) {
+        die('لا يمكن تصدير أكثر من سنة واحدة');
+    }
     header('Content-Type: text/csv; charset=utf-8');
     header('Content-Disposition: attachment; filename="attendance_' . $dateFrom . '_' . $dateTo . '.csv"');
     $out = fopen('php://output', 'w');
@@ -214,6 +236,7 @@ require_once __DIR__ . '/../includes/admin_layout.php';
     </div>
 
     <div style="margin-top:20px;display:flex;justify-content:center" id="paginationWrap">
+    <input type="hidden" id="csrfToken" value="<?= htmlspecialchars(generateCsrfToken()) ?>">
     <?php if ($totalPages > 1): ?>
         <div class="pagination">
         <?php
@@ -384,6 +407,7 @@ async function deleteRecord(id, btn) {
     try {
         const fd = new FormData();
         fd.append('delete_id', id);
+        fd.append('csrf_token', document.getElementById('csrfToken')?.value || '');
         const resp = await fetch('', { method: 'POST', body: fd, credentials: 'same-origin' });
         const data = await resp.json();
         if (data.success) {

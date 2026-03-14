@@ -9,6 +9,10 @@ header('Alt-Svc: clear');
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/rate_limiter.php';
+
+// Rate Limiting: 10 تقارير/ساعة لكل IP
+if (isRateLimited(10, 3600, 'report')) { rateLimitResponse(); }
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
   http_response_code(405);

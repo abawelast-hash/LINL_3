@@ -46,8 +46,12 @@ function calculateDistance(float $lat1, float $lon1, float $lat2, float $lon2): 
 function loadAllSettings(bool $refresh = false): array {
     static $cache = null;
     if ($cache === null || $refresh) {
-        $rows  = db()->query("SELECT setting_key, setting_value FROM settings")->fetchAll();
-        $cache = array_column($rows, 'setting_value', 'setting_key');
+        try {
+            $rows  = db()->query("SELECT setting_key, setting_value FROM settings")->fetchAll();
+            $cache = array_column($rows, 'setting_value', 'setting_key');
+        } catch (Exception $e) {
+            $cache = [];
+        }
     }
     return $cache;
 }
@@ -106,6 +110,12 @@ function isWithinGeofence(float $empLat, float $empLon, ?int $branchId = null): 
  * تسجيل حضور أو انصراف موظف
  */
 function recordAttendance(int $employeeId, string $type, float $lat, float $lon, float $accuracy = 0): array {
+    // التحقق من صحة نوع التسجيل
+    $validTypes = ['in', 'out', 'overtime-start', 'overtime-end'];
+    if (!in_array($type, $validTypes, true)) {
+        return ['success' => false, 'message' => 'نوع تسجيل غير صالح'];
+    }
+
     // التحقق من تكرار التسجيل خلال 5 دقائق
     $recent = hasRecentAttendance($employeeId, $type, 5);
     if ($recent) {
@@ -131,7 +141,7 @@ function recordAttendance(int $employeeId, string $type, float $lat, float $lon,
             $workStart = strtotime(date('Y-m-d', strtotime('-1 day')) . ' ' . $workStartStr);
         }
         if ($now > $workStart) {
-            $lateMinutes = (int)round(($now - $workStart) / 60);
+            $lateMinutes = max(0, (int)round(($now - $workStart) / 60));
         }
     }
 

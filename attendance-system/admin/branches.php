@@ -39,7 +39,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $otAfter  = (int)($_POST['overtime_start_after'] ?? 60);
             $otMin    = (int)($_POST['overtime_min_duration'] ?? 30);
 
-            if ($name && $lat != 0 && $lon != 0) {
+            // التحقق من صحة الإحداثيات
+            if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+                $message = 'إحداثيات غير صالحة. خط العرض يجب أن يكون بين -90 و 90، وخط الطول بين -180 و 180';
+                $msgType = 'error';
+            } elseif ($radius < 10 || $radius > 10000) {
+                $message = 'نصف قطر الجيوفينس يجب أن يكون بين 10 و 10000 متر';
+                $msgType = 'error';
+            } elseif ($name && $lat != 0 && $lon != 0) {
                 try {
                     $stmt = db()->prepare("INSERT INTO branches (name, latitude, longitude, geofence_radius,
                         work_start_time, work_end_time, check_in_start_time, check_in_end_time,
@@ -93,7 +100,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $otMin    = (int)($_POST['overtime_min_duration'] ?? 30);
             $active   = (int)($_POST['is_active'] ?? 1);
 
-            if ($id && $name) {
+            // التحقق من صحة الإحداثيات
+            if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+                $message = 'إحداثيات غير صالحة';
+                $msgType = 'error';
+            } elseif ($radius < 10 || $radius > 10000) {
+                $message = 'نصف قطر الجيوفينس يجب أن يكون بين 10 و 10000 متر';
+                $msgType = 'error';
+            } elseif ($id && $name) {
                 $stmt = db()->prepare("UPDATE branches SET name=?, latitude=?, longitude=?, geofence_radius=?,
                     work_start_time=?, work_end_time=?, check_in_start_time=?, check_in_end_time=?,
                     check_out_start_time=?, check_out_end_time=?, checkout_show_before=?,

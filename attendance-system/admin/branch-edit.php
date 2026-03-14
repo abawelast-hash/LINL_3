@@ -38,6 +38,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         exit;
     }
 
+    // التحقق من صحة الإحداثيات
+    if ($lat < -90 || $lat > 90 || $lon < -180 || $lon > 180) {
+        header('Location: branch-edit.php?id=' . $branchId . '&msg=' . urlencode('إحداثيات غير صالحة') . '&t=error');
+        exit;
+    }
+    if ($radius < 10 || $radius > 10000) {
+        header('Location: branch-edit.php?id=' . $branchId . '&msg=' . urlencode('نصف قطر الجيوفينس يجب أن يكون بين 10 و 10000 متر') . '&t=error');
+        exit;
+    }
+
     $stmt = db()->prepare("UPDATE branches SET name=?, latitude=?, longitude=?, geofence_radius=?,
         work_start_time=?, work_end_time=?, check_in_start_time=?, check_in_end_time=?,
         check_out_start_time=?, check_out_end_time=?, checkout_show_before=?,

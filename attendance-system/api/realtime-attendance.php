@@ -49,9 +49,9 @@ $recStmt = db()->prepare("
     LEFT JOIN branches b ON e.branch_id = b.id
     WHERE $whereStr
     ORDER BY a.timestamp DESC
-    LIMIT $perPage OFFSET $offset
+    LIMIT ? OFFSET ?
 ");
-$recStmt->execute($params);
+$recStmt->execute(array_merge($params, [$perPage, $offset]));
 $records = $recStmt->fetchAll();
 
 // إحصائيات الفترة

@@ -15,10 +15,13 @@ require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/functions.php';
 
-// لو غير CLI، منع التشغيل
-if (php_sapi_name() !== 'cli' && (!isset($_GET['secret']) || $_GET['secret'] !== 'auto_checkout_2026')) {
-    http_response_code(403);
-    exit('Access denied');
+// لو غير CLI، منع التشغيل إلا برمز سري من متغير البيئة
+$cronSecret = $_ENV['CRON_SECRET'] ?? getenv('CRON_SECRET') ?: '';
+if (php_sapi_name() !== 'cli') {
+    if (empty($cronSecret) || !isset($_GET['secret']) || !hash_equals($cronSecret, $_GET['secret'])) {
+        http_response_code(403);
+        exit('Access denied');
+    }
 }
 
 $now = new DateTime();
@@ -60,16 +63,18 @@ try {
     $autoCheckouts = 0;
     $skipped = 0;
 
-    foreach ($employees as $emp) {
-        try {
-            // جلب جدول الفرع (مع بيانات الورديتين)
-            $schedule = getBranchSchedule($emp['branch_id']);
-            $shift1 = $schedule['shift1'];
-            $shift2 = $schedule['shift2'];
+    db()->beginTransaction();
+    try {
+        foreach ($employees as $emp) {
+            try {
+                // جلب جدول الفرع (مع بيانات الورديتين)
+                $schedule = getBranchSchedule($emp['branch_id']);
+                $shift1 = $schedule['shift1'];
+                $shift2 = $schedule['shift2'];
 
-            // تحديد الوردية بناءً على وقت تسجيل الدخول
-            $empShift = detectShiftByCheckinTime($emp['checkin_time'], $shift1, $shift2);
-            $coEnd = $empShift === 2 ? $shift2['check_out_end_time'] : $shift1['check_out_end_time'];
+                // تحديد الوردية بناءً على وقت تسجيل الدخول
+                $empShift = detectShiftByCheckinTime($emp['checkin_time'], $shift1, $shift2);
+                $coEnd = $empShift === 2 ? $shift2['check_out_end_time'] : $shift1['check_out_end_time'];
 
             // بناء الوقت المتوقع للانصراف التلقائي
             $expectedCheckout = new DateTime($emp['attendance_date'] . ' ' . $coEnd);
@@ -108,6 +113,11 @@ try {
         } catch (Exception $e) {
             echo "[{$now->format('Y-m-d H:i:s')}] ❌ خطأ في تسجيل انصراف {$emp['name']}: " . $e->getMessage() . "\n";
         }
+    }
+    db()->commit();
+    } catch (Exception $e) {
+        db()->rollBack();
+        echo "[{$now->format('Y-m-d H:i:s')}] ❌ خطأ في العملية: " . $e->getMessage() . "\n";
     }
 
     echo "[{$now->format('Y-m-d H:i:s')}] 📊 إجمالي: {$autoCheckouts} انصراف تلقائي، {$skipped} تم تخطيهم (لم يحن الوقت)\n";

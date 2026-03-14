@@ -30,6 +30,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $branchId = (int)($_POST['branch_id'] ?? 0) ?: null;
 
             if ($name && $job && $pin) {
+                // التحقق من وجود الفرع
+                if ($branchId !== null) {
+                    $branchCheck = db()->prepare("SELECT id FROM branches WHERE id = ? AND is_active = 1");
+                    $branchCheck->execute([$branchId]);
+                    if (!$branchCheck->fetch()) {
+                        $message = 'الفرع المحدد غير موجود أو غير مفعل';
+                        $msgType = 'error';
+                        header('Location: employees.php?msg=' . urlencode($message) . '&t=' . $msgType);
+                        exit;
+                    }
+                }
                 try {
                     $token = generateUniqueToken();
                     $stmt  = db()->prepare("INSERT INTO employees (name, job_title, pin, phone, branch_id, unique_token) VALUES (?,?,?,?,?,?)");

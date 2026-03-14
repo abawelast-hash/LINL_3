@@ -5,10 +5,14 @@
 
 require_once __DIR__ . '/../includes/config.php';
 require_once __DIR__ . '/../includes/functions.php';
+require_once __DIR__ . '/../includes/rate_limiter.php';
 
 header('Content-Type: application/json; charset=utf-8');
 
-$token = trim($_GET['token'] ?? '');
+// Rate Limiting: 60 طلب/دقيقة لكل IP
+if (isRateLimited(60, 60, 'get_employee')) { rateLimitResponse(); }
+
+$token = (string)trim($_GET['token'] ?? '');
 if (empty($token)) {
     jsonResponse(['success' => false, 'message' => 'token مطلوب'], 400);
 }

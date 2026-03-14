@@ -20,6 +20,7 @@ class Database {
             try {
                 self::$instance = new PDO($dsn, DB_USER, DB_PASS, $options);
             } catch (PDOException $e) {
+                error_log('Database connection failed: ' . $e->getMessage());
                 http_response_code(500);
                 die(json_encode([
                     'success' => false,
